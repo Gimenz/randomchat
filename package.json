@@ -1,0 +1,17 @@
+{
+  "name": "whatsapp-bot-random-chat",
+  "version": "1.0.0",
+  "description": "Whatsapp Bot - Random Chat",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Gimenz",
+  "license": "ISC",
+  "dependencies": {
+    "@open-wa/wa-automate": "^2.0.26",
+    "moment-timezone": "^0.5.31",
+    "node-fetch": "^2.6.1",
+    "util": "^0.12.3"
+  }
+}
