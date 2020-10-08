@@ -79,7 +79,7 @@ async function msgHandler (client, message) {
         if (!isPrivate) return client.reply(from, 'Maaf, hanya dapat digunakan di private chat', id); {   
         switch (command) {
 
-        case 'find':
+        case 'find': {
             var cek = pengirim.includes(sender.id);
             const isQuotedImage = quotedMsg && quotedMsg.type === 'image'
             if(!cek){
@@ -101,7 +101,7 @@ async function msgHandler (client, message) {
                     //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
                     client.sendImage(uwong, imageBase64, 'gambar.jpeg',`${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '')}`)
                         .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))                
-                } else if (!args.length >= 1) {
+                } else if (args.length >= 1) {
                     const opo = body.slice(6)
                     //pengirim.push(from) //otomatis menambahkan nomor ke database
                     //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
@@ -110,18 +110,17 @@ async function msgHandler (client, message) {
                 } else {
                     await client.reply(from, 'Format salah! Untuk membuka daftar perintah kirim #menu', id)
                 } 
-            }      
+            } 
+        }     
             break   
-        case 'daftar': //menambahkan nomor ke database
-            if (!args.length >= 1) return client.reply(from, 'Nomornya mana kak?\ncontoh: #daftar 6285226236155')  
-            {
-                const number = body.slice(5).replace(/[-\s+]/g,'')
-                const contactId = number + '@c.us'
-                var cek = pengirim.includes(contactId);
-                if(!cek){
+        case 'daftar': { //menambahkan nomor ke database 
+                if (!args.length >= 1) return client.reply(from, 'Nomornya mana kak?\ncontoh: #daftar 6285226236155')  
+                const text = body.slice(8).replace(/[-\s+]/g,'') + '@c.us'
+                var cek = pengirim.includes(text);
+                if(cek){
                     return client.reply(from, 'Nomor sudah ada di database', id) //if number already exists on database
-                }else{
-                    const mentah = await client.checkNumberStatus(contactId) //VALIDATE WHATSAPP NUMBER
+                } else {
+                    const mentah = await client.checkNumberStatus(text) //VALIDATE WHATSAPP NUMBER
                     const hasil = mentah.canReceiveMessage ? `Sukses menambahkan nomer ke database\nTotal data nomer sekarang : *${pengirim.length}*` : false
                     if (!hasil) return client.reply(from, 'Nomor WhatsApp tidak valid [ Tidak terdaftar di WhatsApp ]', id) 
                     {
@@ -129,8 +128,8 @@ async function msgHandler (client, message) {
                     fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
                         client.sendText(from, hasil)
                     }
-                    }
-            }
+                }
+        }
             break                                     
         case 'remove': //menghapus nomor dari database
             if (!isOwner) return client.reply(from, 'Fitur ini hanya dapat digunakan oleh admin bot')  
