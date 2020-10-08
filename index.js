@@ -5,7 +5,7 @@ const clientOptions = require('./util').options
 const moment = require('moment-timezone');
 moment.tz.setDefault('Asia/Jakarta').locale('id')
 let ban = JSON.parse(fs.readFileSync('./lib/banned.json'))
-const menuId = require('./lib/menu')
+const menuId = require('./lib/menu');
 
 const startServer = async () => {
     create('Imperial', clientOptions)
@@ -21,12 +21,20 @@ const startServer = async () => {
            client.onMessage((message) => {
                 msgHandler(client, message)
             })
+            
+            // listen group invitation
+            client.onAddedToGroup((chat) => {
+                if (chat.isGroup) {
+                    client.sendText(chat.id, `Maaf, Bot tidak bisa digunakan dalam grup`).then(() => client.leaveGroup(chat.id))
+                    client.deleteChat(chat.id)
+                } else {
+                    return true
+                }
+            })            
             // listening on Incoming Call
             client.onIncomingCall((call) => {
                 client.sendText(call.peerJid, 'Maaf, saya tidak bisa menerima panggilan. CALL = AUTOBLOCK!!!')
                 client.contactBlock(call.peerJid)
-                ban.push(call.peerJid)
-                fs.writeFileSync('./lib/banned.json', JSON.stringify(ban))
                 client.deleteChat(call.peerJid)
             })
         })
@@ -37,7 +45,7 @@ const startServer = async () => {
 
 async function msgHandler (client, message) {
     try {
-        const { type, id, from, t, sender, isGroupMsg, chat, caption, isMedia, mimetype, quotedMsg, quotedMsgObj, quotedMsgId, mentionedJidList, author} = message
+        const { type, id, from, t, sender, isGroupMsg, chat, caption, isMedia, mimetype, quotedMsg,} = message
         let { body } = message
 
         const { name, formattedTitle } = chat
@@ -46,9 +54,10 @@ async function msgHandler (client, message) {
         if (pushname == undefined || pushname.trim() == '') console.log(sender)
         const botNumber = await client.getHostNumber() + '@c.us'
         const isBanned = ban.includes(sender.id)
-        const isOwner = sender.id === 'nomermu deleh kene [dudu nomer bot]@c.us'
+        const isOwner = sender.id === '628xxxx@c.us' //here is your number [NOT BOT NUMBER]
         const pengirim = JSON.parse(fs.readFileSync('./lib/user.json'))
-        const togel = pengirim[Math.floor(Math.random()*pengirim.length)];
+        const uwong = pengirim[Math.floor(Math.random()*pengirim.length)];
+        const isPrivate = sender.id === chat.contact.id
 
         // Checking processTime
         const processTime = now => moment.duration(now - moment(t * 1000)).asSeconds() // t => timestamp when message was received
@@ -67,48 +76,62 @@ async function msgHandler (client, message) {
         if (isCmd && isGroupMsg) { console.log(color('[EXEC]'), color(moment(t * 1000).format('DD/MM/YY HH:mm:ss'), 'yellow'), color(`${command} [${args.length}]`), 'from', color(pushname), 'in', color(name || formattedTitle)) }
 
         if (!isBanned) {
+        if (!isPrivate) return client.reply(from, 'Maaf, hanya dapat digunakan di private chat', id); {   
         switch (command) {
 
         case 'find':
+            var cek = pengirim.includes(sender.id);
             const isQuotedImage = quotedMsg && quotedMsg.type === 'image'
-            if (isMedia && args.length >= 1) {
-                const mediaData = await decryptMedia(message, uaOverride)
-                const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
-                const opo = body.slice(6)
-                const uwong = togel
-                //pengirim.push(from) //otomatis menambahkan nomor ke database
-                //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
-                client.sendImage(uwong, imageBase64, 'gambar.jpeg',`${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '')}`)
-                    .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))
-            } else if (isQuotedImage && args.length >= 1) {
-                const mediaData = await decryptMedia(quotedMsg, uaOverride)
-                const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
-                const opo = body.slice(6)
-                const uwong = togel
-                //pengirim.push(from) //otomatis menambahkan nomor ke database
-                //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
-                client.sendImage(uwong, imageBase64, 'gambar.jpeg',`${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '')}`)
-                    .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))                
-            } else if (args.length >= 1) { 
-                const opo = body.slice(6)
-                const uwong = togel
-                //pengirim.push(from) //otomatis menambahkan nomor ke database
-                //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
-                client.sendText(uwong, `${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '').replace(/[-]/g, '')}`)
-                    .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))   
-            } else {
-                await client.reply(from, 'Format salah! Untuk membuka daftar perintah kirim #menu', id)
-            }       
-            break 
-        case 'add': //menambahkan nomor ke database
-            if (!args.length >= 1) return client.reply(from, 'Masukkan nomornya, *GUNAKAN AWALAN 62* contoh: 6285226236155')  
+            if(!cek){
+                return client.reply(from, 'kamu belum terdaftar, untuk mendaftar kirim #daftar no wa kamu\ncontoh : #daftar 628523615486 ', id) //if user is not registered
+            } else {           
+                if (isMedia && args.length >= 1) {
+                    const mediaData = await decryptMedia(message, uaOverride)
+                    const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
+                    const opo = body.slice(6)
+                    //pengirim.push(from) //otomatis menambahkan nomor ke database
+                    //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
+                    client.sendImage(uwong, imageBase64, 'gambar.jpeg',`${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '')}`)
+                        .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))
+                } else if (isQuotedImage && args.length >= 1) {
+                    const mediaData = await decryptMedia(quotedMsg, uaOverride)
+                    const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
+                    const opo = body.slice(6)
+                    //pengirim.push(from) //otomatis menambahkan nomor ke database
+                    //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
+                    client.sendImage(uwong, imageBase64, 'gambar.jpeg',`${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '')}`)
+                        .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))                
+                } else if (!args.length >= 1) {
+                    const opo = body.slice(6)
+                    //pengirim.push(from) //otomatis menambahkan nomor ke database
+                    //fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
+                    client.sendText(uwong, `${opo}\n\nHai, kamu mendapat pesan dari : wa.me/${from.replace(/[@c.us]/g, '').replace(/[-]/g, '')}`)
+                        .then(() => client.reply(from, 'Berhasil mengirim pesan\nTunggu pesan dari seseorang, kalo ga di bales coba lagi aja', id))   
+                } else {
+                    await client.reply(from, 'Format salah! Untuk membuka daftar perintah kirim #menu', id)
+                } 
+            }      
+            break   
+        case 'daftar': //menambahkan nomor ke database
+            if (!args.length >= 1) return client.reply(from, 'Nomornya mana kak?\ncontoh: #daftar 6285226236155')  
             {
-                const text = body.slice(5).replace(/[-\s+]/g,'')
-                pengirim.push(text+'@c.us')
-                fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
-                client.reply(from, 'Sukses memasukkan nomor ke database', message.id)
+                const number = body.slice(5).replace(/[-\s+]/g,'')
+                const contactId = number + '@c.us'
+                var cek = pengirim.includes(contactId);
+                if(!cek){
+                    return client.reply(from, 'Nomor sudah ada di database', id) //if number already exists on database
+                }else{
+                    const mentah = await client.checkNumberStatus(contactId) //VALIDATE WHATSAPP NUMBER
+                    const hasil = mentah.canReceiveMessage ? `Sukses menambahkan nomer ke database\nTotal data nomer sekarang : *${pengirim.length}*` : false
+                    if (!hasil) return client.reply(from, 'Nomor WhatsApp tidak valid [ Tidak terdaftar di WhatsApp ]', id) 
+                    {
+                    pengirim.push(mentah.id._serialized)
+                    fs.writeFileSync('./lib/user.json', JSON.stringify(pengirim))
+                        client.sendText(from, hasil)
+                    }
+                    }
             }
-            break              
+            break                                     
         case 'remove': //menghapus nomor dari database
             if (!isOwner) return client.reply(from, 'Fitur ini hanya dapat digunakan oleh admin bot')  
             if (!args.length >= 1) return client.reply(from, 'Masukkan nomornya, *GUNAKAN AWALAN 62* contoh: 6285226236155')  
@@ -121,8 +144,10 @@ async function msgHandler (client, message) {
             break
         case 'list': //melihat daftar nomor di database 
             if (!isOwner) return client.reply(from, 'Fitur ini hanya dapat digunakan oleh admin bot')  
-            var text = fs.readFileSync('./lib/user.json','utf8')
-            client.sendText(from, text) 
+            const num = fs.readFileSync('./lib/user.json')
+            const daftarnum = JSON.parse(num)
+            const hasil = daftarnum.toString().replace(/['"@c.us]/g,'').replace(/[,]/g, '\n');
+            client.sendText(from, hasil) 
             break                               
         case 'donasi': {
             await client.sendText(from, menuId.textDonasi())
@@ -164,18 +189,23 @@ async function msgHandler (client, message) {
             break                            
         case 'ban':
             if (!isOwner) return client.reply(from, 'Fitur ini hanya dapat digunakan oleh admin bot')  
-            for (let i = 0; i < mentionedJidList.length; i++) {
-                ban.push(mentionedJidList[i])
+            if (!args.length >= 1) return client.reply(from, 'Masukkan nomornya, *GUNAKAN AWALAN 62* contoh: 6285226236155')  
+            {
+                const text = body.slice(7).replace(/[-\s+]/g,'')
+                ban.push(text+'@c.us')
                 fs.writeFileSync('./lib/banned.json', JSON.stringify(ban))
-                client.reply(from, 'Succes ban target! mampus', message.id)
+                client.reply(from, 'Sukses banned', message.id)
             }
-            break
+            break 
         case 'unban':
             if (!isOwner) return client.reply(from, 'Fitur ini hanya dapat digunakan oleh admin bot')  
-            let inx = ban.indexOf(mentionedJidList[0])
-            ban.splice(inx, 1)
+            if (!args.length >= 1) return client.reply(from, 'Masukkan nomornya, *GUNAKAN AWALAN 62* contoh: 6285226236155')  
+            {
+            const text = body.slice(7).replace(/[-\s+]/g,'')
+            ban.splice(text, 1)
             fs.writeFileSync('./lib/banned.json', JSON.stringify(ban))
             client.reply(from, 'Succes unban target!', message.id)
+            }
             break                         
         case 'getbot': 
             client.sendText(from, `Nomor Bot WA : wa.me/${botNumber.replace('@c.us', '')}`)
@@ -184,6 +214,7 @@ async function msgHandler (client, message) {
             console.log(color('[ERROR]', 'red'), color(time, 'yellow'), 'Unregistered Command from', color(pushname))
             break
         }
+       }
      }
     } catch (err) {
         console.log(color('[ERROR]', 'red'), err)

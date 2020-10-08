@@ -19,7 +19,7 @@ Pastikan sudah install NodeJs di PC mu
 
 ### Setting
 ```bash
-taruh nomormu [nomor admin] di index.js dan cari isOwner 
+taruh nomormu di index.js dan cari isOwner 
 ``` 
 ## Special Thanks to
 1. [`open-wa`](https://github.com/open-wa/wa-automate-nodejs)
